@@ -40,13 +40,19 @@ def run_backtest(df, strategy, capital, cost_pct=COST_PCT, risk_pct=RISK_PCT):
             price = float(row["Close"])  # buy at today's close
             max_money = min(cash, cash * risk_pct / STOP_LOSS_PCT)  # money allowed in this trade so a stop-loss costs only risk_pct of cash
             qty = math.floor(max_money / (price * (1 + cost_pct / 100)))  # whole shares we can afford
+            note = "Signal"
+            if qty == 0:  # index or future price is bigger than the money allowed for one trade
+                # This is practice only, so use a FRACTION of 1 unit. Then even a big index
+                # like Sensex (Rs 80,000+) can be tested with a small wallet.
+                qty = max_money / (price * (1 + cost_pct / 100))
+                note = "Signal (fraction of 1 unit, practice only)"
             if qty > 0:
                 cost = qty * price * (1 + cost_pct / 100)  # total money spent
                 stop, target = stop_and_target(price)  # stop-loss and target are ALWAYS set
                 cash -= cost
                 pos = {"date": date, "price": price, "qty": qty, "cost": cost, "stop": stop, "target": target}
                 trades.append({"Date": date.date(), "Action": "BUY", "Price": round(price, 2), "Profit": None,
-                               "Reason": f"Signal. Stop {stop:.2f} / Target {target:.2f}",
+                               "Reason": f"{note}. Stop {stop:.2f} / Target {target:.2f}",
                                "Entry Date": None, "Entry Price": None})
         value = cash + (pos["qty"] * row["Close"] if pos else 0)  # cash + value of shares held
         equity.append(value)
