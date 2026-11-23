@@ -3,14 +3,55 @@
 import pandas as pd  # pandas holds tables of data
 import yfinance as yf  # yfinance downloads free data from Yahoo Finance
 
-# Names shown in the sidebar and the Yahoo code for each one
-STOCKS = {
-    "NIFTY 50": "^NSEI",  # the Nifty 50 index
-    "RELIANCE": "RELIANCE.NS",  # .NS means NSE India
-    "TCS": "TCS.NS",
-    "INFY": "INFY.NS",
-    "HDFCBANK": "HDFCBANK.NS",
+# Instruments are grouped for the sidebar. Every friendly name maps to a Yahoo code.
+# INDICES are practice-only: you cannot buy an index itself, but you CAN test
+# strategies on its price. COMMODITY FUTURES are priced in US dollars (USD),
+# not rupees. Yahoo does not carry Indian index futures or MCX commodities,
+# so the futures here are the big world ones (gold, silver, oil, gas, copper).
+STOCK_GROUPS = {
+    "Index (India)": {
+        "NIFTY 50": "^NSEI",  # the Nifty 50 index
+        "NIFTY NEXT 50": "^NSMIDCP",  # the next 50 companies after the Nifty 50
+        "NIFTY 100": "^CNX100",
+        "NIFTY 200": "^CNX200",
+        "NIFTY MIDCAP 50": "^NSEMDCP50",
+        "BANK NIFTY": "^NSEBANK",  # banking sector index
+        "SENSEX": "^BSESN",  # the BSE Sensex
+        "NIFTY IT": "^CNXIT",
+        "NIFTY AUTO": "^CNXAUTO",
+        "NIFTY PHARMA": "^CNXPHARMA",
+        "NIFTY FMCG": "^CNXFMCG",
+        "NIFTY METAL": "^CNXMETAL",
+        "NIFTY ENERGY": "^CNXENERGY",
+        "NIFTY REALTY": "^CNXREALTY",
+        "NIFTY PSU BANK": "^CNXPSUBANK",
+        "NIFTY PSE": "^CNXPSE",  # public sector companies
+        "NIFTY INFRA": "^CNXINFRA",
+        "INDIA VIX": "^INDIAVIX",  # fear index: high means the market is nervous
+    },
+    "Stock (India)": {
+        "RELIANCE": "RELIANCE.NS",  # .NS means NSE India
+        "TCS": "TCS.NS",
+        "INFY": "INFY.NS",
+        "HDFCBANK": "HDFCBANK.NS",
+    },
+    "Commodity Future (USD)": {
+        "GOLD FUTURE": "GC=F",  # gold futures, priced in US dollars
+        "SILVER FUTURE": "SI=F",
+        "CRUDE OIL FUTURE": "CL=F",
+        "NATURAL GAS FUTURE": "NG=F",
+        "COPPER FUTURE": "HG=F",
+    },
 }
+
+# Flat lookup: friendly name -> Yahoo code. Used everywhere in the app.
+STOCKS = {name: code for group in STOCK_GROUPS.values() for name, code in group.items()}
+
+# Currency mark for display only: "Rs" for Indian things, "$" for USD futures.
+CURRENCY = {}
+for _group_name, _group in STOCK_GROUPS.items():
+    for _name in _group:
+        CURRENCY[_name] = "$" if _group_name.endswith("(USD)") else "Rs"
 
 
 class DataError(Exception):
