@@ -24,12 +24,20 @@ Your browser opens the dashboard. If it does not, open http://localhost:8501
 To stop the app, press Ctrl + C in the black window.
 
 ## How to use
-1. Left side: choose the stock, dates, capital and strategy.
+1. Left side: choose the instrument type (Index, Stock or Commodity Future), the instrument, dates, capital and strategy.
 2. Dashboard tab: see the price chart and today's signal (BUY / SELL / HOLD).
 3. Backtest tab: press "Run Backtest" to see how the rules did on old data.
 4. Paper Trade tab: press "Virtual BUY" or "Virtual SELL". This only saves a line in a file.
 5. Trade Diary tab: see every trade, the reason, and your profit or loss.
-6. Arena tab: rank all strategies on one stock.
+6. Arena tab: rank all strategies on one instrument.
+
+## What you can test
+- 18 Indian indices: Nifty 50, Nifty Next 50, Nifty 100, Nifty 200, Nifty Midcap 50, Bank Nifty, Sensex,
+  Nifty IT, Auto, Pharma, FMCG, Metal, Energy, Realty, PSU Bank, PSE, Infra, and India VIX.
+- 4 stocks: Reliance, TCS, Infosys, HDFC Bank.
+- 5 commodity futures (priced in US dollars): Gold, Silver, Crude Oil, Natural Gas, Copper.
+Indices cannot be bought in real life, and Yahoo does not carry Indian index futures or MCX commodities.
+Everything here is practice-only: the app just counts the numbers in your virtual wallet.
 
 ## The files
 - app.py - the dashboard page
@@ -64,7 +72,9 @@ Most simple strategies do NOT beat Buy & Hold. That is normal and honest. Never 
 - If both stop-loss and target could be hit in one day, the app assumes the stop-loss was hit first (safer).
 - Only buying (long) trades. No short selling.
 - Position size: each backtest trade uses a size so that hitting the 1% stop-loss loses only 0.5% of your money (the "max risk per trade" box in the sidebar). With a 1% stop-loss that means about half your money in each trade.
-- The NIFTY 50 is an index. You cannot buy it directly. Here it is only used as practice numbers.
+- Indices (Nifty, Sensex, Bank Nifty, etc.) cannot be bought directly. Here they are only practice numbers.
+- Commodity futures are priced in US dollars. The virtual wallet treats every number the same, so do not
+  compare a gold paper P&L with a Nifty paper P&L.
 
 ## If something goes wrong
 - "Yahoo returned no data": Yahoo is busy or your 4G is weak. Wait a minute and try again.
