@@ -11,14 +11,18 @@ st.warning("PAPER TRADING ONLY. No real money, no broker. Prices come from free,
 
 # ---------- Sidebar: choices ----------
 st.sidebar.header("Settings")
-stock_name = st.sidebar.selectbox("Stock", list(data.STOCKS.keys()))  # which stock
+group = st.sidebar.selectbox("Instrument type", list(data.STOCK_GROUPS.keys()))  # index, stock or commodity
+stock_name = st.sidebar.selectbox("Instrument", list(data.STOCK_GROUPS[group].keys()))  # which one
 symbol = data.STOCKS[stock_name]  # Yahoo code
+cur = data.CURRENCY.get(stock_name, "Rs")  # Rs for Indian, $ for USD futures
 start = st.sidebar.date_input("Start date", date.today() - timedelta(days=3 * 365))  # first day
 end = st.sidebar.date_input("End date", date.today())  # last day
 capital = st.sidebar.number_input("Capital (Rs)", min_value=1000, value=100000, step=1000)  # backtest money
 strat = st.sidebar.selectbox("Strategy", strategy.STRATEGIES)  # which rules
 risk = st.sidebar.number_input("Max risk per trade (% of capital)", 0.1, 5.0, backtest.RISK_PCT, 0.1)  # 0.5% rule
 st.sidebar.caption(f"Every trade: Stop-loss {strategy.STOP_LOSS_PCT}% and Target {strategy.TARGET_PCT}%.")
+st.sidebar.caption("Indices and futures are practice-only (you cannot buy an index itself). "
+                   "Commodity futures are priced in USD; the virtual wallet just counts the numbers.")
 
 
 @st.cache_data(ttl=600, show_spinner="Downloading prices...")  # remember data for 10 minutes
@@ -47,7 +51,7 @@ with tab1:
         sig, why = strategy.explain_today(df, strat)  # today's signal
         last, prev = df["Close"].iloc[-1], df["Close"].iloc[-2]
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric(f"{stock_name} last price", f"Rs {last:,.2f}", f"{(last / prev - 1) * 100:.2f}%")
+        c1.metric(f"{stock_name} last price", f"{cur} {last:,.2f}", f"{(last / prev - 1) * 100:.2f}%")
         c2.metric("Today's signal", sig)
         c3.metric("Virtual wallet cash", f"Rs {paper_trade.cash_balance():,.0f}")
         c4.metric("Paper P&L (closed)", f"Rs {paper_trade.total_pnl():,.0f}")
@@ -92,15 +96,15 @@ with tab3:
         st.error(str(e))
     df = get_data()
     if price is not None:
-        st.metric(f"{stock_name} latest price (delayed, free, unofficial)", f"Rs {price:,.2f}", f"as of {when}")
+        st.metric(f"{stock_name} latest price (delayed, free, unofficial)", f"{cur} {price:,.2f}", f"as of {when}")
         if df is not None:
             sig, why = strategy.explain_today(df, strat)
             st.info(f"Today's signal ({strat}): {sig}. {why}")
         else:
             sig, why = "HOLD", "No data"
         stop, target = strategy.stop_and_target(price)
-        st.write(f"Virtual cash: Rs {paper_trade.cash_balance():,.2f} | Stop-loss would be Rs {stop:,.2f} | "
-                 f"Target would be Rs {target:,.2f}")
+        st.write(f"Virtual cash: Rs {paper_trade.cash_balance():,.2f} | Stop-loss would be {cur} {stop:,.2f} | "
+                 f"Target would be {cur} {target:,.2f}")
         max_qty = int(paper_trade.cash_balance() * (risk / strategy.STOP_LOSS_PCT) // price)  # size so a stop-loss costs only the risk %
         st.caption(f"Risk rule: max {risk}% of wallet lost per trade. With a {strategy.STOP_LOSS_PCT}% stop-loss, "
                    f"that is about {max_qty} unit(s) at this price. (A guide, not forced.)")
@@ -119,7 +123,8 @@ with tab3:
         st.write("No open positions.")
     for t in opens:
         c1, c2 = st.columns([4, 1])
-        c1.write(f"#{t['id']} {t['stock']} x{t['qty']} bought at Rs {t['entry_price']:.2f} "
+        tc = data.CURRENCY.get(t["stock"], "Rs")  # that trade's own currency mark
+        c1.write(f"#{t['id']} {t['stock']} x{t['qty']} bought at {tc} {t['entry_price']:.2f} "
                  f"(stop {t['stop_loss']:.2f}, target {t['target']:.2f})")
         if c2.button("Virtual SELL", key=f"sell{t['id']}"):
             try:  # sell at the latest price of THAT stock
@@ -166,7 +171,7 @@ with tab4:
 
 # ---------- Tab 5: Arena (all strategies ranked) ----------
 with tab5:
-    st.write(f"Run ALL {len(strategy.STRATEGIES)} strategies on the selected stock and dates, then rank them by return.")
+    st.write(f"Run ALL {len(strategy.STRATEGIES)} strategies on the selected instrument and dates, then rank them by return.")
     st.warning("A high rank on OLD data does NOT mean future profit. Strategies with few trades (under 20) can look "
                "good by luck. More trades or a positive backtest is not proof of an edge. Compare with Buy & Hold below.")
     arena_cost = st.number_input("Cost per buy and per sell (%) for the arena", 0.0, 1.0, backtest.COST_PCT, 0.01,
